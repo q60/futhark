@@ -2192,6 +2192,11 @@ typeExpForError (E.TEVar qn _) =
   return [ErrorString $ pretty qn]
 typeExpForError (E.TEUnique te _) =
   ("*" :) <$> typeExpForError te
+typeExpForError (E.TEDim dims te _) =
+  (ErrorString ("?" <> dims' <> ".") :) <$> typeExpForError te
+  where
+    dims' = mconcat (map onDim dims)
+    onDim d = "[" <> pretty d <> "]"
 typeExpForError (E.TEArray te d _) = do
   d' <- dimExpForError d
   te' <- typeExpForError te
