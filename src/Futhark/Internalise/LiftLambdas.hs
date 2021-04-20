@@ -73,8 +73,8 @@ existentials e =
       m = identityMapper {mapOnExp = \e' -> modify (<> existentials e') >> pure e'}
    in execState (astMap m e) here
 
-liftFunction :: VName -> [TypeParam] -> [Pat] -> StructType -> Exp -> LiftM Exp
-liftFunction fname tparams params ret funbody = do
+liftFunction :: VName -> [TypeParam] -> [Pat] -> StructRetType -> Exp -> LiftM Exp
+liftFunction fname tparams params (RetType dims ret) funbody = do
   -- Find free variables
   global <- gets stateGlobal
   let bound =
@@ -110,7 +110,7 @@ liftFunction fname tparams params ret funbody = do
         valBindTypeParams = tparams,
         valBindParams = free_params ++ params,
         valBindRetDecl = Nothing,
-        valBindRetType = Info (ret, mempty),
+        valBindRetType = Info (RetType dims ret, mempty),
         valBindBody = funbody,
         valBindDoc = Nothing,
         valBindAttrs = mempty,
@@ -123,10 +123,10 @@ liftFunction fname tparams params ret funbody = do
       (Var (qualName fname) (Info (augType $ free_dims ++ free_nondims)) mempty)
       $ free_dims ++ free_nondims
   where
-    orig_type = funType params ret
+    orig_type = funType params $ RetType dims ret
     mkParam (v, t) = Id v (Info (fromStruct t)) mempty
     freeVar (v, t) = Var (qualName v) (Info (fromStruct t)) mempty
-    augType rem_free = fromStruct $ funType (map mkParam rem_free) orig_type
+    augType rem_free = fromStruct $ funType (map mkParam rem_free) $ RetType [] orig_type
 
     apply :: Exp -> [(VName, StructType)] -> Exp
     apply f [] = f
